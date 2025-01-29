@@ -1,9 +1,5 @@
 html, body {
-    margin: 0;
-    padding: 0;
-    background-color: #343541; /* Dark background */
-    color: #EAEAEA; /* Light text */
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    font-family: consolas, monospace;
 }
 
 h1:focus {
@@ -67,9 +63,9 @@ a, .btn-link {
     color: white;
 }
 
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
+.blazor-error-boundary::after {
+    content: "An error has occurred."
+}
 
 .loading-progress {
     position: relative;
@@ -79,19 +75,19 @@ a, .btn-link {
     margin: 20vh auto 1rem auto;
 }
 
-    .loading-progress circle {
-        fill: none;
-        stroke: #e0e0e0;
-        stroke-width: 0.6rem;
-        transform-origin: 50% 50%;
-        transform: rotate(-90deg);
-    }
+.loading-progress circle {
+    fill: none;
+    stroke: #e0e0e0;
+    stroke-width: 0.6rem;
+    transform-origin: 50% 50%;
+    transform: rotate(-90deg);
+}
 
-        .loading-progress circle:last-child {
-            stroke: #1b6ec2;
-            stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
-            transition: stroke-dasharray 0.05s ease-in-out;
-        }
+    .loading-progress circle:last-child {
+        stroke: #1b6ec2;
+        stroke-dasharray: calc(3.141 * var(--blazor-load-percentage, 0%) * 0.8), 500%;
+        transition: stroke-dasharray 0.05s ease-in-out;
+    }
 
 .loading-progress-text {
     position: absolute;
@@ -115,22 +111,4 @@ code {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
-}
-
-.dark-container {
-    background-color: transparent;
-}
-
-.chat-messages {
-    border: 1px solid #444;
-    background-color: #40414F; /* Slightly lighter panel */
-    border-radius: 5px;
-    max-width: 600px;
-    min-height: 200px;
-}
-
-.chat-input {
-    background-color: #40414F;
-    color: #EAEAEA;
-    border: 1px solid #555;
 }

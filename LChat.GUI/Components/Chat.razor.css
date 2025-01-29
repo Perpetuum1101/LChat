@@ -1,0 +1,4 @@
+﻿.btn:not(:disabled):not(.disabled):hover .bi-send,
+.btn:not(:disabled):not(.disabled):active .bi-send {
+    opacity: 0.7;
+}
