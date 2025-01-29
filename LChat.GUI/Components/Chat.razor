@@ -1,0 +1,40 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+
+<div class="dark-container d-flex flex-column align-items-center p-3">
+    <div class="chat-messages w-100 mb-3 p-3 text-light">
+        @if (_messages.Count == 0)
+        {
+            <p class="text-secondary">No messages yet...</p>
+        }
+        else
+        {
+            @foreach (var msg in _messages)
+            {
+                <div class="mb-2">
+                    <span class="text-info">@msg</span>
+                </div>
+            }
+        }
+    </div>
+
+    <EditForm Model="this" OnValidSubmit="SendMessage">
+        <div class="w-100 d-flex">
+            <InputTextArea class="form-control chat-input me-2" @bind-Value="_currentMessage" rows="3" placeholder="Type your message..." />
+            <button type="submit" class="btn btn-secondary">Send</button>
+        </div>
+    </EditForm>
+</div>
+
+@code {
+    private List<string> _messages = new();
+    private string _currentMessage = string.Empty;
+
+    private void SendMessage()
+    {
+        if (!string.IsNullOrWhiteSpace(_currentMessage))
+        {
+            _messages.Add(_currentMessage);
+            _currentMessage = string.Empty;
+        }
+    }
+}
