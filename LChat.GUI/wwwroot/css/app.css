@@ -1,4 +1,8 @@
 html, body {
+    margin: 0;
+    padding: 0;
+    background-color: #343541; /* Dark background */
+    color: #EAEAEA; /* Light text */
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
 
@@ -111,4 +115,22 @@ code {
 
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
+}
+
+.dark-container {
+    background-color: transparent;
+}
+
+.chat-messages {
+    border: 1px solid #444;
+    background-color: #40414F; /* Slightly lighter panel */
+    border-radius: 5px;
+    max-width: 600px;
+    min-height: 200px;
+}
+
+.chat-input {
+    background-color: #40414F;
+    color: #EAEAEA;
+    border: 1px solid #555;
 }
