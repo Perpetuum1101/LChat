@@ -7,7 +7,7 @@
     <div class="row justify-content-center h-100">
         <div class="col-10 d-flex flex-column h-100">
             <!-- MESSAGES -->
-            <div class="flex-grow-1 overflow-auto mb-3 pb-5" style="overflow-x: hidden; white-space: pre-wrap; word-wrap: break-word;">
+            <div class="flex-grow-1 overflow-x-hidden overflow-y-auto mb-3 pb-5 text-wrap text-break">
                 @foreach (var message in _messages)
                 {
                     <div class="pb-3">
@@ -15,7 +15,7 @@
                             <i class="bi @(GetIconClass(message.Type)) me-2"></i>
                             <small class="text-muted me-2">@message.Timestamp.ToString("HH:mm")</small>
                         </div>
-                        <div class="@(GetTextColor(message.Type))" style="white-space: pre-wrap;">@message.Content</div>
+                        <div class="@(GetTextColor(message.Type))" >@message.Content</div>
                     </div>
                 }
             </div>
@@ -25,16 +25,16 @@
                 <EditForm Model="this" OnValidSubmit="SendMessage">
                     <div class="input-group border rounded">
                         <textarea class="form-control shadow-none border-0 bg-transparent"
-                        style="resize: none"
-                        @bind="_currentMessage"
-                        rows="@_rows"
-                        placeholder="Type your message..."
-                        @ref="_textArea"
-                        @oninput="OnInput"
-                        @onkeydown="HandleKeyPress"></textarea>
+                                  style="resize: none"
+                                  @bind="_currentMessage"
+                                  rows="@_rows"
+                                  placeholder="Type your message..."
+                                  @ref="_textArea"
+                                  @oninput="OnInput"
+                                  @onkeydown="HandleKeyPress"></textarea>
                         <button type="submit"
-                        @ref="_submitButton"
-                        class="btn bg-transparent border-0 shadow-none text-white">
+                                @ref="_submitButton"
+                                class="btn bg-transparent border-0 shadow-none text-white">
                             <i class="bi bi-send"></i>
                         </button>
                     </div>
@@ -56,7 +56,7 @@
     private ElementReference _textArea;
     private int _rows = INITIAL_ROWS;
 
-    private int Rows 
+    private int Rows
     {
         get => _rows;
         set
@@ -67,7 +67,7 @@
                 return;
             }
 
-            if(value > MAX_ROWS)
+            if (value > MAX_ROWS)
             {
                 _rows = MAX_ROWS;
 
