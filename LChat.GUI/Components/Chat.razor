@@ -1,11 +1,13 @@
 ﻿@using LChat.GUI.Data
 @using Microsoft.AspNetCore.Components.Forms
 
+@inject IJSRuntime JSRuntime
+
 <div class="container vh-100">
     <div class="row justify-content-center h-100">
         <div class="col-10 d-flex flex-column h-100">
             <!-- MESSAGES -->
-            <div class="flex-grow-1 overflow-auto mb-3 pb-5">
+            <div class="flex-grow-1 overflow-auto mb-3 pb-5" style="overflow-x: hidden; white-space: pre-wrap; word-wrap: break-word;">
                 @foreach (var message in _messages)
                 {
                     <div class="pb-3">
@@ -13,7 +15,7 @@
                             <i class="bi @(GetIconClass(message.Type)) me-2"></i>
                             <small class="text-muted me-2">@message.Timestamp.ToString("HH:mm")</small>
                         </div>
-                        <div class="@(GetTextColor(message.Type))">@message.Content</div>
+                        <div class="@(GetTextColor(message.Type))" style="white-space: pre-wrap;">@message.Content</div>
                     </div>
                 }
             </div>
@@ -23,12 +25,16 @@
                 <EditForm Model="this" OnValidSubmit="SendMessage">
                     <div class="input-group border rounded">
                         <textarea class="form-control shadow-none border-0 bg-transparent"
-                                  style="resize: none"
-                                  @bind="_currentMessage"
-                                  rows="2"
-                                  placeholder="Type your message..."></textarea>
+                        style="resize: none"
+                        @bind="_currentMessage"
+                        rows="@_rows"
+                        placeholder="Type your message..."
+                        @ref="_textArea"
+                        @oninput="OnInput"
+                        @onkeydown="HandleKeyPress"></textarea>
                         <button type="submit"
-                                class="btn bg-transparent border-0 shadow-none text-white">
+                        @ref="_submitButton"
+                        class="btn bg-transparent border-0 shadow-none text-white">
                             <i class="bi bi-send"></i>
                         </button>
                     </div>
@@ -40,15 +46,67 @@
 
 
 @code {
+    const int MAX_ROWS = 6;
+    const int INITIAL_ROWS = 2;
+    const int MAX_LINE_LENGHT = 60;
+
     private List<Message> _messages = new();
     private string _currentMessage = string.Empty;
+    private ElementReference _submitButton;
+    private ElementReference _textArea;
+    private int _rows = INITIAL_ROWS;
 
-    private void SendMessage()
+    private int Rows 
+    {
+        get => _rows;
+        set
+        {
+            if (value < INITIAL_ROWS)
+            {
+                _rows = INITIAL_ROWS;
+                return;
+            }
+
+            if(value > MAX_ROWS)
+            {
+                _rows = MAX_ROWS;
+
+                return;
+            }
+
+            _rows = value;
+        }
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        var text = e.Value?.ToString() ?? string.Empty;
+        Rows = text.Length / MAX_LINE_LENGHT;
+    }
+
+    private async Task SendMessage()
     {
         if (!string.IsNullOrWhiteSpace(_currentMessage))
         {
             _messages.Add(new Message(MessageType.Client, _currentMessage, DateTime.Now));
             _currentMessage = string.Empty;
+            Rows = INITIAL_ROWS;
+        }
+
+        await _textArea.FocusAsync();
+    }
+
+    private async Task HandleKeyPress(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            if (e.ShiftKey)
+            {
+                Rows++;
+                return;
+            }
+            await _submitButton.FocusAsync();
+            await JSRuntime.InvokeVoidAsync("triggerClick", _submitButton);
         }
     }
 
