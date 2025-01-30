@@ -1,13 +1,20 @@
-﻿@using Microsoft.AspNetCore.Components.Forms
+﻿@using LChat.GUI.Data
+@using Microsoft.AspNetCore.Components.Forms
 
 <div class="container vh-100">
     <div class="row justify-content-center h-100">
         <div class="col-10 d-flex flex-column h-100">
             <!-- MESSAGES -->
             <div class="flex-grow-1 overflow-auto mb-3 pb-5">
-                @foreach(var message in _messages)
+                @foreach (var message in _messages)
                 {
-                    <p>@message</p>
+                    <div class="pb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="bi @(GetIconClass(message.Type)) me-2"></i>
+                            <small class="text-muted me-2">@message.Timestamp.ToString("HH:mm")</small>
+                        </div>
+                        <div class="@(GetTextColor(message.Type))">@message.Content</div>
+                    </div>
                 }
             </div>
 
@@ -33,15 +40,30 @@
 
 
 @code {
-    private List<string> _messages = new();
+    private List<Message> _messages = new();
     private string _currentMessage = string.Empty;
 
     private void SendMessage()
     {
         if (!string.IsNullOrWhiteSpace(_currentMessage))
         {
-            _messages.Add(_currentMessage);
+            _messages.Add(new Message(MessageType.Client, _currentMessage, DateTime.Now));
             _currentMessage = string.Empty;
         }
     }
+
+    private string GetIconClass(MessageType type) => type switch
+    {
+        MessageType.LLM => "bi-robot",
+        MessageType.Client => "bi-person",
+        _ => ""
+    };
+
+    private string GetTextColor(MessageType type) => type switch
+    {
+        MessageType.Error => "text-danger",
+        MessageType.Log => "text-primary",
+        MessageType.Meta => "text-warning",
+        _ => "text-light"
+    };
 }
