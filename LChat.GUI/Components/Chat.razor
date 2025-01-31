@@ -1,8 +1,10 @@
-﻿@using LChat.GUI.Data
+﻿@using LChat.GUI.ChatService
+@using LChat.GUI.Data
 @using Microsoft.AspNetCore.Components.Forms
 @using Markdig;
 
 @inject IJSRuntime JSRuntime
+@inject IChatService ChatService
 
 <div class="container vh-100">
     <div class="row justify-content-center h-100">
@@ -59,6 +61,13 @@
     private ElementReference _textArea;
     private int _rows = INITIAL_ROWS;
 
+    protected override async Task OnInitializedAsync()
+    {
+        await ChatService.StartAsync();
+        ChatService.MessageReceived += OnMessageReceived;
+        await base.OnInitializedAsync();
+    }
+
     private int Rows
     {
         get => _rows;
@@ -113,7 +122,6 @@
             await JSRuntime.InvokeVoidAsync("triggerClick", _submitButton);
         }
     }
-
     private string GetIconClass(MessageType type) => type switch
     {
         MessageType.LLM => "bi-robot",
@@ -128,4 +136,10 @@
         MessageType.Meta => "text-warning",
         _ => "text-light"
     };
+
+    private void OnMessageReceived(Message message)
+    {
+        _messages.Add(message);
+        StateHasChanged();
+    }
 }
