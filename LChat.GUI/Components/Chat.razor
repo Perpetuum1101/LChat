@@ -126,13 +126,16 @@
     {
         MessageType.LLM => "bi-robot",
         MessageType.Client => "bi-person",
+        MessageType.Meta =>  "bi-info-square",
+        MessageType.Log => "bi-info-square",
+        MessageType.Error => "bi-bug",
         _ => ""
     };
 
     private string GetTextColor(MessageType type) => type switch
     {
         MessageType.Error => "text-danger",
-        MessageType.Log => "text-primary",
+        MessageType.Log => "text-success",
         MessageType.Meta => "text-warning",
         _ => "text-light"
     };
