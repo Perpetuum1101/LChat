@@ -3,8 +3,11 @@
 @using Microsoft.AspNetCore.Components.Forms
 @using Markdig;
 
+@implements IDisposable
+
 @inject IJSRuntime JSRuntime
 @inject IChatService ChatService
+
 
 <div class="container vh-100">
     <div class="row justify-content-center h-100">
@@ -13,7 +16,7 @@
             <div class="flex-grow-1 overflow-x-hidden overflow-y-auto mb-3 pb-5 text-wrap text-break">
                 @foreach (var message in _messages)
                 {
-                    <div class="pb-3">
+                    <div class="pb-3" @key="message.GetHashCode()">
                         <div class="d-flex align-items-center">
                             <i class="bi @(GetIconClass(message.Type)) me-2"></i>
                             <small class="text-muted me-2">@message.Timestamp.ToString("HH:mm")</small>
@@ -23,6 +26,9 @@
                         </div>
                     </div>
                 }
+                <div style="display: @(_showLoading ? "block" : "none")">
+                    <small class="text-muted me-2">@_loadingMessage</small>
+                </div>
             </div>
 
             <!-- INPUT AREA -->
@@ -35,6 +41,7 @@
                         rows="@_rows"
                         placeholder="Type your message..."
                         @ref="_textArea"
+                        disabled="@_showLoading"
                         @oninput="OnInput"
                         @onkeydown="HandleKeyPress"></textarea>
                         <button type="submit"
@@ -50,16 +57,29 @@
 </div>
 
 
-@code {
+@code 
+{
     const int MAX_ROWS = 6;
     const int INITIAL_ROWS = 2;
     const int MAX_LINE_LENGHT = 60;
+    const int LOADING_REFRESH_DELAY = 333;
 
     private List<Message> _messages = new();
     private string _currentMessage = string.Empty;
     private ElementReference _submitButton;
     private ElementReference _textArea;
     private int _rows = INITIAL_ROWS;
+    private bool _showLoading = false;
+    private CancellationTokenSource _cancellationTokenSource = new();
+    private string _loadingMessage = string.Empty;
+
+    private readonly static string[] LoadingSymbols = 
+    {
+        string.Empty,
+        ".",
+        "..",
+        "..."
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -105,13 +125,13 @@
             return;
         }
 
-        var messageTask = ChatService.SendMessageAsync(_currentMessage);
-        var htmlText = Markdown.ToHtml(_currentMessage);
-        _messages.Add(new Message(MessageType.Client, htmlText, DateTime.Now));
+        var messageToSend = _currentMessage;
         _currentMessage = string.Empty;
+        var htmlText = Markdown.ToHtml(messageToSend);
+        _messages.Add(new Message(MessageType.Client, htmlText, DateTime.Now));
         Rows = INITIAL_ROWS;
-        await _textArea.FocusAsync();
-        await messageTask;
+        _ = ShowLoading();
+        await ChatService.SendMessageAsync(messageToSend);
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
@@ -125,9 +145,7 @@
             }
             await _submitButton.FocusAsync();
             await JSRuntime.InvokeVoidAsync("HTMLElement.prototype.click.call", _submitButton);
-            //await JSRuntime.InvokeVoidAsync("triggerClick", _submitButton);
         }
-            
     }
 
     private string GetIconClass(MessageType type) => type switch
@@ -152,5 +170,42 @@
     {
         _messages.Add(message);
         StateHasChanged();
+        if (_showLoading)
+        {
+            _cancellationTokenSource.Cancel();
+        }
+    }
+
+    private async Task ShowLoading()
+    {
+        _showLoading = true;
+        var i = 0;
+        try
+        {
+            while (!_cancellationTokenSource.Token.IsCancellationRequested)
+            {
+                _loadingMessage = LoadingSymbols[i];
+                i++;
+                if (i >= LoadingSymbols.Length)
+                {
+                    i = 0;
+                }
+                StateHasChanged();
+                await Task.Delay(LOADING_REFRESH_DELAY, _cancellationTokenSource.Token);
+            }
+        }
+        finally
+        {
+            _cancellationTokenSource = new CancellationTokenSource();  
+            _showLoading = false;
+            StateHasChanged();
+            await _textArea.FocusAsync();
+        }
+    }
+
+    public void Dispose()
+    {
+        _cancellationTokenSource.Cancel();
+        _cancellationTokenSource.Dispose();
     }
 }
