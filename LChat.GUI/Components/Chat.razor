@@ -98,15 +98,20 @@
 
     private async Task SendMessage()
     {
-        if (!string.IsNullOrWhiteSpace(_currentMessage))
+        if (string.IsNullOrWhiteSpace(_currentMessage))
         {
-            var htmlText = Markdown.ToHtml(_currentMessage);
-            _messages.Add(new Message(MessageType.Client, htmlText, DateTime.Now));
-            _currentMessage = string.Empty;
-            Rows = INITIAL_ROWS;
+            await _textArea.FocusAsync();
+
+            return;
         }
 
+        var messageTask = ChatService.SendMessageAsync(_currentMessage);
+        var htmlText = Markdown.ToHtml(_currentMessage);
+        _messages.Add(new Message(MessageType.Client, htmlText, DateTime.Now));
+        _currentMessage = string.Empty;
+        Rows = INITIAL_ROWS;
         await _textArea.FocusAsync();
+        await messageTask;
     }
 
     private async Task HandleKeyPress(KeyboardEventArgs e)
@@ -119,9 +124,12 @@
                 return;
             }
             await _submitButton.FocusAsync();
-            await JSRuntime.InvokeVoidAsync("triggerClick", _submitButton);
+            await JSRuntime.InvokeVoidAsync("HTMLElement.prototype.click.call", _submitButton);
+            //await JSRuntime.InvokeVoidAsync("triggerClick", _submitButton);
         }
+            
     }
+
     private string GetIconClass(MessageType type) => type switch
     {
         MessageType.LLM => "bi-robot",
@@ -135,8 +143,8 @@
     private string GetTextColor(MessageType type) => type switch
     {
         MessageType.Error => "text-danger",
-        MessageType.Log => "text-success",
-        MessageType.Meta => "text-warning",
+        MessageType.Log => "text-primary",
+        MessageType.Meta => "text-success",
         _ => "text-light"
     };
 

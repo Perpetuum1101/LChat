@@ -3,38 +3,38 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace LChat.GUI.ChatService;
 
-public class ChatService : IChatService
+public class ChatService(ILogger<ChatService>? logger = null) : IChatService
 {
     private HubConnection? _hubConnection;
-    private readonly ILogger<ChatService>? _logger;
+    private readonly ILogger<ChatService>? _logger = logger;
     private bool _disposed;
+
+    private HubConnection Connection
+    {
+        get
+        {
+            if (_hubConnection == null)
+            {
+                _hubConnection = new HubConnectionBuilder()
+                                     .WithUrl("https://localhost:32768/Chat")
+                                     .WithAutomaticReconnect([
+                                         TimeSpan.Zero,
+                                         TimeSpan.FromSeconds(2),
+                                         TimeSpan.FromSeconds(10),
+                                         TimeSpan.FromSeconds(30)])
+                                     .Build();
+
+                ConfigureHubConnection();
+            }
+
+            return _hubConnection;
+        }
+    }
 
     public bool IsConnected => _hubConnection != null &&
                                _hubConnection.State == HubConnectionState.Connected;
 
     public event Action<Message>? MessageReceived;
-
-    public ChatService(ILogger<ChatService>? logger = null)
-    {
-        _logger = logger;
-    }
-
-    private void EnsureConnectionInitialized()
-    {
-        if (_hubConnection == null)
-        {
-            _hubConnection = new HubConnectionBuilder()
-                .WithUrl("https://localhost:32768/Chat")
-                .WithAutomaticReconnect([
-                    TimeSpan.Zero,
-                    TimeSpan.FromSeconds(2),
-                    TimeSpan.FromSeconds(10),
-                    TimeSpan.FromSeconds(30) ])
-                .Build();
-
-            ConfigureHubConnection();
-        }
-    }
 
     private void ConfigureHubConnection()
     {
@@ -57,7 +57,9 @@ public class ChatService : IChatService
 
         _hubConnection.Closed += async exception =>
         {
-            _logger?.LogError(exception, "Chat hub connection closed");
+            var content = $"Disconnected! {exception?.Message}";
+            _logger?.LogError(content);
+            MessageReceived?.Invoke(ConstructErrorMessage(content));
             await Task.CompletedTask;
         };
 
@@ -69,26 +71,44 @@ public class ChatService : IChatService
 
     public async Task StartAsync()
     {
-        EnsureConnectionInitialized();
-
-        if (_hubConnection!.State == HubConnectionState.Disconnected)
+        try
         {
-            try
-            {
-                await _hubConnection.StartAsync();
-                _logger?.LogInformation("Chat hub connection started");
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogError(ex, "Error starting chat hub connection");
-                throw;
-            }
+            await Connection.StartAsync();
+            _logger?.LogInformation("Chat hub connection started");
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error starting chat hub connection");
+            MessageReceived?.Invoke(ConstructErrorMessage(ex.Message));
         }
     }
 
-    public Task SendMessageAsync(string message)
+    public async Task SendMessageAsync(string content)
     {
-        throw new NotImplementedException();
+        if (!IsConnected)
+        {
+            _logger?.LogWarning("No connection, send ignored.");
+
+            return;
+        }
+
+        try
+        {
+            var message = new Message(MessageType.Client, content, DateTime.Now);
+            await Connection.SendAsync("SendChat", message);
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogError(ex, "Error sending message to the hub");
+            MessageReceived?.Invoke(ConstructErrorMessage(ex.Message));
+        }
+    }
+
+    private static Message ConstructErrorMessage(string content)
+    {
+        var message = new Message(MessageType.Error, content, DateTime.Now);
+
+        return message;
     }
 
     public async ValueTask DisposeAsync()
