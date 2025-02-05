@@ -1,9 +1,11 @@
 ﻿using LChat.GUI.Data;
 using Microsoft.AspNetCore.SignalR.Client;
+using Microsoft.Extensions.Options;
 
 namespace LChat.GUI.ChatService;
 
-public class ChatService(ILogger<ChatService>? logger = null) : IChatService
+public class ChatService(IOptions<ConnectionOptions> options,
+                         ILogger<ChatService>? logger = null) : IChatService
 {
     private HubConnection? _hubConnection;
     private readonly ILogger<ChatService>? _logger = logger;
@@ -16,7 +18,7 @@ public class ChatService(ILogger<ChatService>? logger = null) : IChatService
             if (_hubConnection == null)
             {
                 _hubConnection = new HubConnectionBuilder()
-                                     .WithUrl("https://localhost:32768/Chat")
+                                     .WithUrl(options.Value.ApiEndpoint)
                                      .WithAutomaticReconnect([
                                          TimeSpan.Zero,
                                          TimeSpan.FromSeconds(2),
