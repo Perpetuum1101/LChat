@@ -83,8 +83,8 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await ChatService.StartAsync();
         ChatService.MessageReceived += OnMessageReceived;
+        await ChatService.StartAsync();
         await base.OnInitializedAsync();
     }
 

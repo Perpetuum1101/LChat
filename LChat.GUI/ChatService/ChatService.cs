@@ -15,22 +15,36 @@ public class ChatService(IOptions<ConnectionOptions> options,
     {
         get
         {
-            if (_hubConnection == null)
+            if (_hubConnection != null)
             {
-                _hubConnection = new HubConnectionBuilder()
-                                     .WithUrl(options.Value.ApiEndpoint)
-                                     .WithAutomaticReconnect([
-                                         TimeSpan.Zero,
-                                         TimeSpan.FromSeconds(2),
-                                         TimeSpan.FromSeconds(10),
-                                         TimeSpan.FromSeconds(30)])
-                                     .Build();
-
-                ConfigureHubConnection();
+                return _hubConnection;
             }
 
-            return _hubConnection;
+            _hubConnection = CreateConnection();
+            ConfigureHubConnection();
+
+            return _hubConnection!;
         }
+    }
+
+    private HubConnection CreateConnection()
+    {
+        var builder = new HubConnectionBuilder();
+        var connection =  builder
+            .WithUrl(
+                options.Value.ApiEndpoint,
+                (opt) => 
+                {
+                    opt.Headers.Add(AuthConstants.ApiKeyHeaderName, options.Value.ApiKey);
+                })
+            .WithAutomaticReconnect([
+                TimeSpan.Zero,
+                TimeSpan.FromSeconds(2),
+                TimeSpan.FromSeconds(10),
+                TimeSpan.FromSeconds(30)])
+            .Build();
+
+        return connection;
     }
 
     public bool IsConnected => _hubConnection != null &&
@@ -101,7 +115,7 @@ public class ChatService(IOptions<ConnectionOptions> options,
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error sending message to the hub");
+            _logger?.LogError(ex, $"Error sending message to the hub {MessageReceived}");
             MessageReceived?.Invoke(ConstructErrorMessage(ex.Message));
         }
     }
